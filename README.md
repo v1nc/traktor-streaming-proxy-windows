@@ -32,17 +32,18 @@ docker build -t traktor-streaming-proxy-windows .
 docker run -d --name traktor-streaming-proxy-windows-container -p 80:80 -p 443:443 --restart always traktor-streaming-proxy-windows
 ```
 7. Trust `server.crt` on your machine: For ubuntu wsl, go to `\\wsl.localhost\Ubuntu\home\username\traktor-streaming-proxy-windows\` in you explorer, click on `server.crt`, select *Install certificate*, select *Local computer*, click *Next*, select *All certificates* and choose *Trusted Root Certification Authorities*, then install the certificate
-8. Patch `Traktor.exe` to make it accept the license (Use `patch_traktor.py` or see the notes below)
+8. Patch `Traktor.exe` to make it accept the license: Run `python patch_traktor.py` and input the path to your `Traktor.exe`. If you copy your `Traktor.exe` to the path mentioned in 7., you can run it in WSL so you don't need to install Python on Windows. After that copy back the patched binary to the Traktor program path. Alternatively, see the notes below to patch it manually)
 9. Run Traktor, go to *settings*, *streaming* and click *Login on Beatport*. If you just booted your device, wait a minute for the docker container to start. If you start Traktor before the container runs, you will need to click *Login to Beatport* again
 10. Everything should work :)
 
 # Notes
 - if you don't want to use my prebuild certificate, you can run `cert/gen-cert.sh` and replace `server.crt` and `server.key` in the root directory before you build the docker image. Because the private key of my prebuild certificate is included in this repository, a man in the middle attacker could theoretically read and modify your traffic to the API if you run this on a network
-- the `patch_traktor.py` script was only tested on Traktor version 4.11.23. If it does not work for you, you can patch the `Traktor.exe` manually:
+- the `patch_traktor.py` script was only tested on Traktor version 4.11.23 but should work on any version that uses the same certificate. If it does not work for you, you can patch the `Traktor.exe` manually:
   1. Download a hex editor like [hxd](https://mh-nexus.de/de/hxd/)
   2. Backup `C:\Program Files\Native Instruments\Traktor xx\Traktor.exe` and open it with your hex editor
   3. Search for `-----BEGIN PUBLIC KEY-----`. It should be the first occurrence, but verify it is the windows key listed [here](https://github.com/0xf4b1/traktor-streaming-proxy/issues/13#issuecomment-1742184706)
-  4. Replace the key with the mac key listed [here](https://github.com/0xf4b1/traktor-streaming-proxy/issues/13#issuecomment-1742184706). Dots in the hex editor represent new lines, so the best way is to replace the key line per line, leaving the dots where they are
-  5. Save the binary and copy it to `C:\Program Files\Native Instruments\Traktor xx\` if you moved it. Run it to verify it works
-  6. Obviously you can not use the usual Beatport API with this version
+  4. Replace the key with the mac key listed [here](https://github.com/0xf4b1/traktor-streaming-proxy/issues/13#issuecomment-1742184706). Dots in the hex editor represent new lines, so the best way is to replace the key line per line, leaving the dots where they are. 
+  5. Save the binary, if hxd warns you about a changing binary size, you did something wrong.
+  6. Copy the binary back to `C:\Program Files\Native Instruments\Traktor xx\` if you moved it. Run it to verify it works
+  7. Obviously you can not use the usual Beatport API with this version
 - if you want to build the project yourself, uncomment the lines in the Dockerfile and save your github username and token to your env as `GITHUB_ACTOR` and `GITHUB_TOKEN`
