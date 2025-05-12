@@ -6,8 +6,9 @@ RUN apt-get install -y openjdk-18-jre-headless
 COPY . /app
 WORKDIR /app
 
-RUN chmod +x ./gradlew
-RUN ./gradlew distTar --no-daemon
+# uncomment the following to build yourself
+# RUN chmod +x ./gradlew
+# RUN ./gradlew distTar --no-daemon
 
 FROM ubuntu:jammy
 
