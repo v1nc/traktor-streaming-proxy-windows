@@ -25,8 +25,8 @@ replay_pid*
 
 # gradle build files
 .gradle/
-build/distributions/classes/
-build/distributions/kotlin/
-build/distributions/libs/
-build/distributions/scripts/
-build/distributions/tmp/
+build/classes/
+build/kotlin/
+build/libs/
+build/scripts/
+build/tmp/
