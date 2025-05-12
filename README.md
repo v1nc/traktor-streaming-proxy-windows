@@ -31,7 +31,7 @@ cd traktor-streaming-proxy-windows
 docker build -t traktor-streaming-proxy-windows .
 docker run -d --name traktor-streaming-proxy-windows-container -p 80:80 -p 443:443 --restart always traktor-streaming-proxy-windows
 ```
-7. Trust `server.crt` on your machine: For ubuntu wsl, go to `\\wsl.localhost\Ubuntu\home\username\traktor-streaming-proxy-windows\` in you explorer, click on `server.crt`, select *Install certificate*, select *Local computer*, click *Next*, select *All certificates* and choose *Trusted Root Certification Authorities*, then install the certificate
+7. Trust `server.crt` on your machine: For ubuntu wsl, go to `\\wsl.localhost\Ubuntu\home\username\traktor-streaming-proxy-windows\` in you explorer, click on `server.crt`, select *Install certificate*, select *Local computer*, click *Next*, select *All certificates* and choose *Trusted Root Certification Authorities*, then install the certificate. Alternatively you can download the `server.crt` file directly from this repo and open in in your explorer
 8. Patch `Traktor.exe` to make it accept the license: Run `python patch_traktor.py` and input the path to your `Traktor.exe`. If you copy your `Traktor.exe` to the path mentioned in 7., you can run it in WSL so you don't need to install Python on Windows. After that copy back the patched binary to the Traktor program path. Alternatively, see the notes below to patch it manually)
 9. Run Traktor, go to *settings*, *streaming* and click *Login on Beatport*. If you just booted your device, wait a minute for the docker container to start. If you start Traktor before the container runs, you will need to click *Login to Beatport* again
 10. Everything should work :)
