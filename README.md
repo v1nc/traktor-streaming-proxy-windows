@@ -3,7 +3,7 @@
 
 <img src="screenshot.png" align="right" width="250"></a>
 
-**Note that running this software might violate copyright laws in your country. This repository is for educational purpose only. Use at your own risk**
+**Note that running this software might violate copyright laws in your country. This repository is for educational purpose only. Use at your own risk.**
 
 
 This fork is based on [traktor-streaming-proxy v0.4.1](https://github.com/0xf4b1/traktor-streaming-proxy) and instructions in this [issue](https://github.com/0xf4b1/traktor-streaming-proxy/issues/13). Thanks to [@0xf4b1](https://github.com/0xf4b1) and [@radusuciu](https://github.com/radusuciu) for your work. New changes of v0.5 will be merged once I tested them successfully. You need to set up the docker image manually at the moment. Once I added a prebuild docker image, you will only need to start the docker container, trust the certificate and patch your `Traktor.exe`
@@ -24,7 +24,7 @@ As with Beatport streaming, Traktor does not allow to use the build-in recorder.
 2. Enable "Start Docker Desktop when you sign in to your computer" in the Docker Desktop settings to make it run at login
 3. Start an ubuntu WSL shell (or your prefered distro)
 4. Clone repo: `git clone https://github.com/v1nc/traktor-streaming-proxy-windows`
-5. If you want to use Spotify or Tidal, add you credentials to `config.properties`. YouTube works without configuration
+5. If you want to use Spotify or Tidal, add your credentials to `config.properties`. YouTube works without configuration
 6. Create and start docker image:
 ```
 cd traktor-streaming-proxy-windows
