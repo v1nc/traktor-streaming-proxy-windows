@@ -1,7 +1,13 @@
-# traktor-streaming-proxy
-Allow Traktor DJ to stream music from YouTube, Spotify, and Tidal by faking Beatport's API
+# traktor-streaming-proxy-windows
+*Allow Traktor DJ on windows to stream music from YouTube, Spotify, and Tidal by faking Beatport's API*
 
 <img src="screenshot.png" align="right" width="250"></a>
+
+**Note that running this software might violate copyright laws in your country. This repository is for educational purpose only. Use at your own risk**
+
+
+This fork is based on [traktor-streaming-proxy v0.4.1](https://github.com/0xf4b1/traktor-streaming-proxy) and instructions in this [issue](https://github.com/0xf4b1/traktor-streaming-proxy/issues/13). Thanks to [@0xf4b1](https://github.com/0xf4b1) and [@radusuciu](https://github.com/radusuciu) for your work. New changes of v0.5 will be merged once I tested them successfully. You need to set up the docker image manually at the moment. Once I added a prebuild docker image, you will only need to start the docker container, trust the certificate and patch your `Traktor.exe`
+
 
 Traktor DJ supports streaming of music tracks, but only from the Beatport and Beatsource services.
 This project aims to integrate other streaming sources into Traktor DJ via Beatport Streaming.
@@ -13,134 +19,30 @@ As a workaround, an on-the-fly format conversion of the music files should be po
 
 As with Beatport streaming, Traktor does not allow to use the build-in recorder.
 
-The project now contains a fully crafted Beatport license file that allows the server to handle linking and authentication, with enabling all features such as track analysis and simultaneous playback of multiple decks. You no longer need to take care of the license file or have a Beatport account with subscription! :)
-
-Please note this project and the setup instructions are only tested on macOS. While it is possible to set it up on Windows in a similar way, Traktor on Windows uses different client certificates and does not work with the license file in this project (but there is a trick to get it working https://github.com/0xf4b1/traktor-streaming-proxy/issues/13#issuecomment-1742184706).
-
-## Setup
-
-1. You need to create a SSL certificate for the domain `api.beatport.com`.
-You can use the script in `cert/gen-cert.sh` to generate a new CA and the server certificate.
-
-2. Configure the server by adjusting the `config.properties` file in the project directory. Both Spotify and Tidal sources require an account.
-
-3. You can now choose between a prebuilt Docker container (3.1) or building from source (3.2) and continue in both cases with 4.
-
-3.1 Docker
-
-Run the server in the Docker container with the following command:
-
+## How to Setup:
+1. Install docker desktop [with WSL](https://docs.docker.com/desktop/features/wsl/)
+2. Enable "Start Docker Desktop when you sign in to your computer" in the Docker Desktop settings to make it run at login
+3. Start an ubuntu WSL shell (or your prefered distro)
+4. Clone repo: `git clone https://github.com/v1nc/traktor-streaming-proxy-windows`
+5. If you want to use Spotify or Tidal, add you credentials to `config.properties`. YouTube works without configuration
+6. Create and start docker image:
 ```
-docker run -p 443:443 -v <path-to-server.crt>:/app/cert/server.crt -v <path-to-server.key>:/app/cert/server.key -v <path-to-config.properties>:/app/config.properties ghcr.io/0xf4b1/traktor-streaming-proxy:latest
+cd traktor-streaming-proxy-windows
+docker build -t traktor-streaming-proxy-windows .
+docker run -d --name traktor-streaming-proxy-windows-container -p 80:80 -p 443:443 --restart always traktor-streaming-proxy-windows
 ```
+7. Trust `server.crt` on your machine: For ubuntu wsl, go to `\\wsl.localhost\Ubuntu\home\username\traktor-streaming-proxy-windows\` in you explorer, click on `server.crt`, select *Install certificate*, select *Local computer*, click *Next*, select *All certificates* and choose *Trusted Root Certification Authorities*, then install the certificate
+8. Patch `Traktor.exe` to make it accept the license (Use `patch_traktor.py` or see the notes below)
+9. Run Traktor, go to *settings*, *streaming* and click *Login on Beatport*. If you just booted your device, wait a minute for the docker container to start. If you start Traktor before the container runs, you will need to click *Login to Beatport* again
+10. Everything should work :)
 
-<details>
-  <summary>3.2 Building from source</summary>
-
-3.2.1 Building
-
-Build the project with the following command:
-
-```
-./gradlew build
-```
-
-3.2.2 Install and configure nginx with SSL and a proxy_pass to this server.
-
-Edit nginx site config `/etc/nginx/sites-available/default` with the following parts:
-
-```
-server {
-        listen 443 ssl default_server;
-        listen [::]:443 ssl default_server;
-
-        ssl_certificate     server.crt;
-        ssl_certificate_key server.key;
-        ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
-        ssl_ciphers         HIGH:!aNULL:!MD5;
-
-        location / {
-                proxy_pass http://127.0.0.1:8000;
-        }
-}
-```
-
-Then reload the changed configuration in nginx.
-
-3.2.3 (Optional) Install ffmpeg on your system if you want to use spotify source.
-
-3.2.4 Start the API server with `./gradlew run`
-
-</details>
-
-4. Redirect `api.beatport.com` to the server by adding the following to `/private/etc/hosts` on macOS
-
-```
-127.0.0.1   api.beatport.com
-```
-
-5. SSL certificate
-
-5.1 Traktor 3.11.1 17 and higher
-
-Recent versions of Traktor do not trust the generated certificate and refuse to connect to the server. The certificate verification can be bypassed by preloading a small stub library that lets the respective function always pass to effectively disable the check.
-
-You need to create a code signing certificate in Keychain Access -> Certificate Assistant -> Create a certificate ...
-
-Enter a name, e.g. "code", and choose Certificate Type: Code Signing and click Create.
-
-Afterwards resign the Traktor binary with the following command:
-
-```
-sudo codesign --force --sign "code" "/Applications/Native Instruments/Traktor Pro 3/Traktor.app/Contents/MacOS/Traktor"
-```
-
-Then build the stub and run Traktor with the following commands:
-
-```
-cd cert
-make
-DYLD_INSERT_LIBRARIES=./SecTrustEvaluateStub.dylib "/Applications/Native Instruments/Traktor Pro 3/Traktor.app/Contents/MacOS/Traktor"
-```
-
-5.2 Traktor 3.8.0 46 and older
-
-You have to import the CA certificate `ca.pem` into the trust store of the device running Traktor via Keychain Access or with the following command:
-
-```
-sudo security add-trusted-cert -d -p ssl -p basic -k /Library/Keychains/System.keychain ca.pem
-```
-
-Verify that secure connections to the sever are working
-
-```
-curl https://api.beatport.com/v4/catalog/genres/
-```
-
-The command should succeed and show some output in JSON.
-If you get SSL certificate errors, you need to fix the configuration.
-
-6. Run Traktor. If you are not yet linked with the server, open settings and connect to Beatport streaming. You should receive an immediate redirect which connects Traktor.
-
-7. Done! If you navigate to Beatport Streaming, you should be able to browse through the predefined categories and use the search box to find content.
-
-## Library Mapping
-
-Beatport Streaming has the following predefined categories, which we try to match to our available sources in the best possible way.
-The genres are identical in each category, which is why we use them to differentiate between the sources.
-
-```
-Curated Playlists
-- <Genres>         --> source
- - <Playlists>     --> followed artists
-  - <Tracks>       --> tracks from artist
-Genres
-- <Genres>         --> source
- - <Tracks>        --> saved/liked tracks in source
-Playlists
-- <Playlists>      --> playlists (all sources merged)
- - <Tracks>        --> tracks from playlist
-Top 100
-- <Genres>         --> source
- - <Tracks>        --> generated playlist of new released tracks
-```
+# Notes
+- if you don't want to use my prebuild certificate, you can run `cert/gen-cert.sh` and replace `server.crt` and `server.key` in the root directory before you build the docker image. Because the private key of my prebuild certificate is included in this repository, a man in the middle attacker could theoretically read and modify your traffic to the API if you run this on a network
+- the `patch_traktor.py` script was only tested on Traktor version 4.11.23. If it does not work for you, you can patch the `Traktor.exe` manually:
+  1. Download a hex editor like [hxd](https://mh-nexus.de/de/hxd/)
+  2. Backup `C:\Program Files\Native Instruments\Traktor xx\Traktor.exe` and open it with your hex editor
+  3. Search for `-----BEGIN PUBLIC KEY-----`. It should be the first occurrence, but verify it is the windows key listed [here](https://github.com/0xf4b1/traktor-streaming-proxy/issues/13#issuecomment-1742184706)
+  4. Replace the key with the mac key listed [here](https://github.com/0xf4b1/traktor-streaming-proxy/issues/13#issuecomment-1742184706). Dots in the hex editor represent new lines, so the best way is to replace the key line per line, leaving the dots where they are
+  5. Save the binary and copy it to `C:\Program Files\Native Instruments\Traktor xx\` if you moved it. Run it to verify it works
+  6. Obviously you can not use the usual Beatport API with this version
+- if you want to build the project yourself, uncomment the lines in the Dockerfile and save your github username and token to your env as `GITHUB_ACTOR` and `GITHUB_TOKEN`
